@@ -10,11 +10,12 @@ export const PRAYER_STATUS_LABELS = ['Jamāʾah', 'On-Time', 'Late', 'Missed'] a
 export const PRAYER_NAMES = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'] as const;
 
 export const HABIT_KEYS = [
-  { value: 'sunnah-fajr', label: 'Sunnah (2) Fajr' },
-  { value: 'sunnah-dhuhr', label: 'Sunnah (4) Dhuhr' },
-  { value: 'sunnah-asr', label: 'Sunnah (2) Asr' },
-  { value: 'sunnah-maghrib', label: 'Sunnah (2) Maghrib' },
-  { value: 'sunnah-isha', label: 'Sunnah (2) Isha' },
+  { value: 'sunnah-fajr', label: "2 Rak'ah Before Fajr" },
+  { value: 'sunnah-dhuhr-before', label: "4 Rak'ah Before Dhuhr" },
+  { value: 'sunnah-dhuhr-after', label: "2 Rak'ah After Dhuhr" },
+  { value: 'sunnah-maghrib', label: "2 Rak'ah After Maghrib" },
+  { value: 'sunnah-isha', label: "2 Rak'ah After Isha" },
+  { value: 'witr', label: "Witr (1 or 3 Rak'ah)" },
   { value: 'tahajjud', label: 'Tahajjud' },
   { value: 'adhkar-morning', label: 'Morning Adhkar' },
   { value: 'adhkar-evening', label: 'Evening Adhkar' },

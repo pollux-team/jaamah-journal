@@ -18,18 +18,21 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { SymbolView } from 'expo-symbols';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useDatabase, settings } from '@/database/sqlite';
 import { Colors } from '@/constants/theme';
-import { getPrayerTimes, getNextPrayer, CALCULATION_METHODS } from '@/utils/prayer-times';
-import type { CalculationMethodKey, AsrMethod } from '@/utils/prayer-times';
+import { getPrayerTimes, getNextPrayer, getCurrentWaqt, CALCULATION_METHODS } from '@/utils/prayer-times';
+import type { CalculationMethodKey, AsrMethod, PrayerTimesResult } from '@/utils/prayer-times';
 import { getQiblaDirection, useMagnetometerHeading } from '@/utils/qibla';
 import type { Coordinates } from '@/utils/location';
+import WaqtArc from '@/components/waqt-arc';
 
 export default function ToolsScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const { db } = useDatabase();
+  const insets = useSafeAreaInsets();
   const theme = useMemo(() => Colors[isDark ? 'dark' : 'light'], [isDark]);
 
   const [location, setLocation] = useState<Coordinates | null>(null);
@@ -66,6 +69,11 @@ export default function ToolsScreen() {
   const nextPrayer = useMemo(() => {
     if (!prayerTimes) return null;
     return getNextPrayer(prayerTimes);
+  }, [prayerTimes]);
+
+  const waqtInfo = useMemo(() => {
+    if (!prayerTimes) return null;
+    return getCurrentWaqt(prayerTimes);
   }, [prayerTimes]);
 
   const countdown = useMemo(() => {
@@ -129,7 +137,7 @@ export default function ToolsScreen() {
   return (
     <ScrollView
       style={[styles.root, { backgroundColor: theme.background }]}
-      contentContainerStyle={styles.scrollContent}>
+      contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 12 }]}>
 
       <Animated.View style={[styles.countdownCard, { backgroundColor: theme.backgroundElement }, pulseStyle]}>
         <View style={styles.countdownInner}>
@@ -140,11 +148,14 @@ export default function ToolsScreen() {
               {nextPrayer?.label ? `at ${nextPrayer.label}` : ''}
             </Text>
           </View>
-          <View style={styles.countdownCircleWrap}>
-            <View style={[styles.countdownCircle, { borderColor: theme.primary }]}>
-              <Text style={[styles.countdownValue, { color: theme.text }]}>{countdown}</Text>
-            </View>
-          </View>
+          <WaqtArc
+            progress={waqtInfo?.progress ?? 0}
+            size={96}
+            strokeWidth={6}
+            label={waqtInfo?.name ?? nextPrayer?.name ?? '--'}
+            sublabel={waqtInfo ? `${waqtInfo.startLabel} – ${waqtInfo.endLabel}` : ''}
+            elapsed={waqtInfo ? `${Math.round((1 - waqtInfo.progress) * 100)}% left` : countdown}
+          />
         </View>
       </Animated.View>
 
@@ -153,6 +164,7 @@ export default function ToolsScreen() {
         <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
           {prayerTimes?.entries.map((entry, i) => {
             const isNext = nextPrayer?.name === entry.name;
+            const isSunrise = entry.type === 'time';
             return (
               <View
                 key={entry.name}
@@ -162,9 +174,14 @@ export default function ToolsScreen() {
                 ]}>
                 <View style={styles.scheduleNameRow}>
                   {isNext && <View style={[styles.nextDot, { backgroundColor: theme.primary }]} />}
-                  <Text style={[styles.scheduleName, { color: isNext ? theme.primary : theme.text }]}>{entry.name}</Text>
+                  <Text style={[styles.scheduleName, { color: isNext ? theme.primary : isSunrise ? theme.textSecondary : theme.text, opacity: isSunrise ? 0.6 : 1 }]}>
+                    {entry.name}
+                  </Text>
+                  {isSunrise && (
+                    <Text style={[styles.scheduleBadge, { color: theme.textSecondary }]}>No Salah</Text>
+                  )}
                 </View>
-                <Text style={[styles.scheduleTime, { color: isNext ? theme.primary : theme.textSecondary }]}>{entry.label}</Text>
+                <Text style={[styles.scheduleTime, { color: isNext ? theme.primary : isSunrise ? theme.textSecondary : theme.textSecondary, opacity: isSunrise ? 0.5 : 1 }]}>{entry.label}</Text>
               </View>
             );
           }) ?? (
@@ -247,16 +264,6 @@ const styles = StyleSheet.create({
   countdownLabel: { fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.6, fontWeight: '600' },
   countdownPrayer: { fontSize: 28, fontWeight: '800', marginTop: 2 },
   countdownTime: { fontSize: 13, marginTop: 2 },
-  countdownCircleWrap: { alignItems: 'center', justifyContent: 'center' },
-  countdownCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2.5,
-  },
-  countdownValue: { fontSize: 15, fontWeight: '700', textAlign: 'center' },
   scheduleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -287,4 +294,15 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous',
   },
   methodLabel: { fontSize: 14, fontWeight: '500', flex: 1 },
+  scheduleBadge: {
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    backgroundColor: 'rgba(128,128,128,0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
 });

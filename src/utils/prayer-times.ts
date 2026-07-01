@@ -29,6 +29,7 @@ export interface PrayerTimeEntry {
   name: string;
   time: Date;
   label: string;
+  type: 'fard' | 'sunnah' | 'time';
 }
 
 export interface PrayerTimesResult {
@@ -83,12 +84,12 @@ export function getPrayerTimes(
   const nextName = times.nextPrayer();
 
   const entries: PrayerTimeEntry[] = [
-    { name: 'Fajr', time: times.fajr, label: format(times.fajr, 'h:mm a') },
-    { name: 'Sunrise', time: times.sunrise, label: format(times.sunrise, 'h:mm a') },
-    { name: 'Dhuhr', time: times.dhuhr, label: format(times.dhuhr, 'h:mm a') },
-    { name: 'Asr', time: times.asr, label: format(times.asr, 'h:mm a') },
-    { name: 'Maghrib', time: times.maghrib, label: format(times.maghrib, 'h:mm a') },
-    { name: 'Isha', time: times.isha, label: format(times.isha, 'h:mm a') },
+    { name: 'Fajr', time: times.fajr, label: format(times.fajr, 'h:mm a'), type: 'fard' },
+    { name: 'Sunrise', time: times.sunrise, label: format(times.sunrise, 'h:mm a'), type: 'time' },
+    { name: 'Dhuhr', time: times.dhuhr, label: format(times.dhuhr, 'h:mm a'), type: 'fard' },
+    { name: 'Asr', time: times.asr, label: format(times.asr, 'h:mm a'), type: 'fard' },
+    { name: 'Maghrib', time: times.maghrib, label: format(times.maghrib, 'h:mm a'), type: 'fard' },
+    { name: 'Isha', time: times.isha, label: format(times.isha, 'h:mm a'), type: 'fard' },
   ];
 
   return {
@@ -106,6 +107,38 @@ export function getPrayerTimes(
     },
     nextPrayerName: nextName,
   };
+}
+
+export function getCurrentWaqt(times: PrayerTimesResult) {
+  const now = new Date();
+  const nextFajr = getNextDayFajr(times);
+
+  const fardEntries = [
+    { name: 'Fajr', start: times.fajr, end: times.sunrise },
+    { name: 'Dhuhr', start: times.dhuhr, end: times.asr },
+    { name: 'Asr', start: times.asr, end: times.maghrib },
+    { name: 'Maghrib', start: times.maghrib, end: times.isha },
+    { name: 'Isha', start: times.isha, end: new Date(nextFajr) },
+  ];
+
+  for (const entry of fardEntries) {
+    if (now.getTime() >= entry.start.getTime() && now.getTime() < entry.end.getTime()) {
+      const total = entry.end.getTime() - entry.start.getTime();
+      const elapsed = now.getTime() - entry.start.getTime();
+      return {
+        name: entry.name,
+        startLabel: format(entry.start, 'h:mm a'),
+        endLabel: format(entry.end, 'h:mm a'),
+        progress: Math.max(0, Math.min(1, elapsed / total)),
+      };
+    }
+  }
+
+  return null;
+}
+
+function getNextDayFajr(times: PrayerTimesResult): number {
+  return times.fajr.getTime() + 24 * 60 * 60 * 1000;
 }
 
 export function getNextPrayer(times: PrayerTimesResult) {

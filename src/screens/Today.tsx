@@ -27,14 +27,17 @@ import { PRAYER_NAMES, HABIT_KEYS, STATUS_OPTIONS } from '@/logic/scorer';
 import type { PrayerStatus } from '@/logic/scorer';
 import { Colors, type AppTheme } from '@/constants/theme';
 import type { Coordinates } from '@/utils/location';
-import { getPrayerTimes, getNextPrayer } from '@/utils/prayer-times';
-import type { CalculationMethodKey, AsrMethod } from '@/utils/prayer-times';
+import { getPrayerTimes, getNextPrayer, getCurrentWaqt } from '@/utils/prayer-times';
+import type { CalculationMethodKey, AsrMethod, PrayerTimesResult } from '@/utils/prayer-times';
 import Onboarding from '@/components/onboarding';
 import CalendarPicker from '@/components/calendar-picker';
+import ProgressRing from '@/components/progress-ring';
+import WaqtArc from '@/components/waqt-arc';
 
 type DateState = {
   iso: string;
   display: string;
+  hijri: string;
 };
 
 function mapStatusToOption(status: string | null) {
@@ -42,16 +45,30 @@ function mapStatusToOption(status: string | null) {
   return found ?? STATUS_OPTIONS[3];
 }
 
+function toHijri(date: Date): string {
+  try {
+    return new Intl.DateTimeFormat('en-US-u-ca-islamic-umalqura', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    }).format(date);
+  } catch {
+    return '';
+  }
+}
+
 function buildDateState(base: Date): DateState {
   const iso = format(base, 'yyyy-MM-dd');
   const display = format(base, Platform.select({ ios: 'EEE, MMM d', default: 'EEE, d MMM' }) ?? 'EEE, d MMM');
+  const hijri = toHijri(base);
   if (isToday(base)) {
-    return { iso, display: `Today · ${display}` };
+    return { iso, display: `Today · ${display}`, hijri };
   }
   if (differenceInDays(new Date(), base) === 1) {
-    return { iso, display: `Yesterday · ${display}` };
+    return { iso, display: `Yesterday · ${display}`, hijri };
   }
-  return { iso, display };
+  return { iso, display, hijri };
 }
 
 function getStreakAccent(age: number, colors: AppTheme): string {
@@ -86,6 +103,20 @@ function useCountdown(targetTime: Date | null) {
   }, [targetTime]);
 
   return remaining;
+}
+
+function useWaqtProgress(times: PrayerTimesResult | null) {
+  const [waqt, setWaqt] = useState<ReturnType<typeof getCurrentWaqt>>(null);
+
+  useEffect(() => {
+    if (!times) return;
+    const update = () => setWaqt(getCurrentWaqt(times));
+    update();
+    const interval = setInterval(update, 60_000);
+    return () => clearInterval(interval);
+  }, [times]);
+
+  return waqt;
 }
 
 export default function TodayScreen() {
@@ -128,6 +159,8 @@ export default function TodayScreen() {
   }, [prayerTimes, cursor]);
 
   const countdown = useCountdown(nextPrayer?.time ?? null);
+
+  const waqtInfo = useWaqtProgress(prayerTimes);
 
   useEffect(() => {
     const load = async () => {
@@ -279,6 +312,9 @@ export default function TodayScreen() {
 
         <View style={{ alignItems: 'center', flex: 1 }}>
           <Text style={[styles.dateLabel, { color: theme.text }]}>{dateState.display}</Text>
+          {!!dateState.hijri && (
+            <Text style={[styles.hijriLabel, { color: theme.textSecondary }]}>{dateState.hijri}</Text>
+          )}
         </View>
 
         <Pressable
@@ -316,9 +352,14 @@ export default function TodayScreen() {
               <Text style={[styles.countdownPrayer, { color: theme.text }]}>{nextPrayer.name}</Text>
               <Text style={[styles.countdownTime, { color: theme.textSecondary }]}>at {nextPrayer.label}</Text>
             </View>
-            <View style={[styles.countdownCircle, { borderColor: theme.primary }]}>
-              <Text style={[styles.countdownValue, { color: theme.text }]}>{countdown}</Text>
-            </View>
+            <WaqtArc
+              progress={waqtInfo?.progress ?? 0}
+              size={88}
+              strokeWidth={6}
+              label={waqtInfo?.name ?? nextPrayer.name}
+              sublabel={waqtInfo ? `${waqtInfo.startLabel} – ${waqtInfo.endLabel}` : ''}
+              elapsed={waqtInfo ? `${Math.round((1 - waqtInfo.progress) * 100)}% left` : countdown}
+            />
           </View>
         </Animated.View>
       )}
@@ -519,6 +560,7 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous',
   },
   dateLabel: { fontSize: 16, fontWeight: '600', flex: 1, textAlign: 'center' },
+  hijriLabel: { fontSize: 13, fontWeight: '400', flex: 1, textAlign: 'center', marginTop: 1 },
   dateNavLabel: { fontSize: 22, fontWeight: '600', minWidth: 36, textAlign: 'center' },
   nowLabel: { fontSize: 14, fontWeight: '600', marginLeft: 4 },
   countdownCard: {
@@ -530,15 +572,6 @@ const styles = StyleSheet.create({
   countdownLabel: { fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.4 },
   countdownPrayer: { fontSize: 22, fontWeight: '700', marginTop: 2 },
   countdownTime: { fontSize: 13, marginTop: 1 },
-  countdownCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-  },
-  countdownValue: { fontSize: 16, fontWeight: '700' },
   heroRow: { flexDirection: 'row', gap: 12, alignItems: 'stretch' },
   heroText: { flex: 1 },
   heroHeading: { fontSize: 14, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.4 },

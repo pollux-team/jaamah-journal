@@ -30,6 +30,7 @@ import type { Coordinates } from '@/utils/location';
 import { getPrayerTimes, getNextPrayer } from '@/utils/prayer-times';
 import type { CalculationMethodKey, AsrMethod } from '@/utils/prayer-times';
 import Onboarding from '@/components/onboarding';
+import CalendarPicker from '@/components/calendar-picker';
 
 type DateState = {
   iso: string;
@@ -107,6 +108,7 @@ export default function TodayScreen() {
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [calcMethod, setCalcMethod] = useState<CalculationMethodKey>('MWL');
   const [asrMethod, setAsrMethod] = useState<AsrMethod>('Standard');
+  const [calendarVisible, setCalendarVisible] = useState(false);
 
   const prayerPickerOpacity = useSharedValue(0);
 
@@ -294,6 +296,16 @@ export default function TodayScreen() {
             <Text style={[styles.nowLabel, { color: theme.primary }]}>Now</Text>
           </Pressable>
         )}
+
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setCalendarVisible(true);
+          }}
+          hitSlop={12}
+          style={({ pressed }) => [pressed && { opacity: 0.5 }, { marginLeft: 8 }]}>
+          <SymbolView name="calendar" tintColor={theme.primary} size={18} />
+        </Pressable>
       </View>
 
       {nextPrayer && isToday(cursor) && (
@@ -475,6 +487,21 @@ export default function TodayScreen() {
           );
         })}
       </View>
+
+      {calendarVisible && (
+        <CalendarPicker
+          key={`cal-${cursor.toISOString()}`}
+          visible
+          selectedDate={cursor}
+          onClose={() => setCalendarVisible(false)}
+          onConfirm={(date: Date) => {
+            setCalendarVisible(false);
+            setCursor(startOfDay(date));
+            setDateState(buildDateState(startOfDay(date)));
+            setSelectedPrayer(null);
+          }}
+        />
+      )}
     </ScrollView>
   );
 }

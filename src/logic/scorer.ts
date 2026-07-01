@@ -1,4 +1,4 @@
-import { format, startOfDay, subDays, isToday } from 'date-fns';
+import { format, startOfDay, subDays } from 'date-fns';
 import { prayers, habits } from '../database/sqlite';
 import type { PrayerRow, HabitRow } from '../database/sqlite';
 import { SQLiteDatabase } from 'expo-sqlite';
@@ -97,17 +97,23 @@ export class StreakEngine {
       }
     }
 
-    const isPastDay = !isToday(new Date(date + 'T00:00:00'));
+    if (loggedCount === 0) {
+      return {
+        date,
+        score: 0,
+        maxScore: PRAYER_NAMES.length * 3,
+        statuses,
+        habits: dayHabits,
+        isPerfect: false,
+        hasLateOrMissed: false,
+        isExcused: false,
+        loggedCount: 0,
+      };
+    }
 
     for (const name of PRAYER_NAMES) {
       if (!statuses.has(name)) {
-        if (isPastDay) {
-          hasAllOnTimeOrJamah = false;
-          statuses.set(name, 'Missed');
-          hasLateOrMissed = true;
-        } else {
-          hasAllOnTimeOrJamah = false;
-        }
+        hasAllOnTimeOrJamah = false;
       }
     }
 

@@ -155,6 +155,7 @@ export default function StatsScreen() {
             <LegendItem color="#d97706" label="Partial" theme={theme} />
             <LegendItem color="#dc2626" label="Missed" theme={theme} />
             <LegendItem color="#c4b5fd" label="Prohibited" theme={theme} />
+            <LegendItem color="#27272a" label="No Data" theme={theme} />
           </View>
         </View>
       </View>

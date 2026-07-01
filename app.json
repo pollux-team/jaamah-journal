@@ -2,7 +2,7 @@
   "expo": {
     "name": "Jamā'ah Journal",
     "slug": "jaamah-journal",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "jaamahtracker",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.pollux.jaamahjournal",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#1a7a4c",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

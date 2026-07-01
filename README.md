@@ -1,6 +1,6 @@
-# Jamā'ah Tracker
+# Jamā'ah Journal
 
-100% offline, privacy-first Islamic habit tracker built with Expo SDK 57 and React Native. Track daily prayers, Sunnah habits, streaks, and analytics — all stored locally on device with SQLite.
+100% offline, privacy-first Islamic habit journal built with Expo SDK 57 and React Native. Track daily prayers, Sunnah habits, streaks, and analytics — all stored locally on device with SQLite.
 
 ## Features
 
@@ -60,7 +60,7 @@ bunx expo lint
 ## Project Structure
 
 ```
-jaamah-tracker/
+jaamah-journal/
 ├── app.json                  # Expo config (plugins, splash, adaptive icon)
 ├── tsconfig.json             # Strict TS, @/* path alias → ./src/*
 ├── src/

@@ -1,5 +1,5 @@
 {
-  "name": "jaamah-tracker",
+  "name": "jaamah-journal",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
@@ -50,7 +50,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "build:apk": "eas build --platform android --profile production-apk --local",
+    "typecheck": "tsc --noEmit"
   },
   "private": true
 }

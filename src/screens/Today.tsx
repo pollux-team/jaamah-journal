@@ -375,7 +375,7 @@ export default function TodayScreen() {
         </View>
       )}
 
-      <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>Fard Tracker</Text>
+      <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>Fard Journal</Text>
 
       {loading ? (
         <Text style={[styles.body, { color: theme.textSecondary }]}>Saving...</Text>
